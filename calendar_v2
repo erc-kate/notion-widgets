@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Calendar Widget</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .calendar-widget {
+            width: 280px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .cal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #500000;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #500000;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            line-height: 1;
+        }
+        .nav-btn:hover {
+            background: #f5f0f0;
+        }
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            text-align: center;
+        }
+        .day-label {
+            font-size: 11px;
+            color: #999;
+            padding: 2px 0 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .cal-day {
+            font-size: 13px;
+            color: #444;
+            padding: 5px 2px;
+            border-radius: 6px;
+            cursor: default;
+        }
+        .cal-day.other-month {
+            color: #ccc;
+        }
+        .cal-day.today {
+            background: #500000;
+            color: white;
+            font-weight: 700;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: auto;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-widget">
+        <div class="cal-header">
+            <button class="nav-btn" id="prev">&#8249;</button>
+            <div class="cal-title" id="month-label"></div>
+            <button class="nav-btn" id="next">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <script>
+        const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+        let current = new Date();
+        let viewing = new Date(current.getFullYear(), current.getMonth(), 1);
+
+        function render() {
+            const grid = document.getElementById('cal-grid');
+            const label = document.getElementById('month-label');
+
+            label.textContent = viewing.toLocaleDateString([], { month: 'long', year: 'numeric' });
+
+            grid.innerHTML = '';
+
+            // Day headers
+            DAY_LABELS.forEach(d => {
+                const el = document.createElement('div');
+                el.className = 'day-label';
+                el.textContent = d;
+                grid.appendChild(el);
+            });
+
+            const firstDay = new Date(viewing.getFullYear(), viewing.getMonth(), 1).getDay();
+            const daysInMonth = new Date(viewing.getFullYear(), viewing.getMonth() + 1, 0).getDate();
+            const daysInPrev = new Date(viewing.getFullYear(), viewing.getMonth(), 0).getDate();
+
+            const today = current;
+
+            // Prev month filler
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const el = document.createElement('div');
+                el.className = 'cal-day other-month';
+                el.textContent = daysInPrev - i;
+                grid.appendChild(el);
+            }
+
+            // Current month days
+            for (let d = 1; d <= daysInMonth; d++) {
+                const el = document.createElement('div');
+                const isToday = d === today.getDate()
+                    && viewing.getMonth() === today.getMonth()
+                    && viewing.getFullYear() === today.getFullYear();
+                el.className = isToday ? 'cal-day today' : 'cal-day';
+                el.textContent = d;
+                grid.appendChild(el);
+            }
+
+            // Next month filler
+            const totalCells = grid.children.length - 7; // subtract header row
+            const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let d = 1; d <= remaining; d++) {
+                const el = document.createElement('div');
+                el.className = 'cal-day other-month';
+                el.textContent = d;
+                grid.appendChild(el);
+            }
+        }
+
+        document.getElementById('prev').addEventListener('click', () => {
+            viewing = new Date(viewing.getFullYear(), viewing.getMonth() - 1, 1);
+            render();
+        });
+        document.getElementById('next').addEventListener('click', () => {
+            viewing = new Date(viewing.getFullYear(), viewing.getMonth() + 1, 1);
+            render();
+        });
+
+        render();
+    </script>
+</body>
+</html>
