@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERC Hub Widget</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+    }
+
+    body {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .hub-layout {
+      display: grid;
+      grid-template-columns: 1fr 3fr;
+      grid-template-rows: min-content;
+      gap: 16px;
+      width: 100%;
+      max-width: 960px;
+      align-items: start;
+    }
+
+    /* ── LEFT COLUMN ── */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 14px 16px;
+      box-sizing: border-box;
+    }
+
+    /* Clock */
+    .clock-widget {
+      text-align: center;
+    }
+
+    .time {
+      font-size: 30px;
+      font-weight: 700;
+      color: #500000;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* Calendar */
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .cal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #500000;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #500000;
+      font-size: 16px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      line-height: 1;
+    }
+
+    .nav-btn:hover { background: #f5f0f0; }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      text-align: center;
+    }
+
+    .day-label {
+      font-size: 10px;
+      color: #999;
+      padding: 2px 0 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .cal-day {
+      font-size: 12px;
+      color: #444;
+      padding: 4px 2px;
+      border-radius: 6px;
+    }
+
+    .cal-day.other-month { color: #ccc; }
+
+    .cal-day.today {
+      background: #500000;
+      color: white;
+      font-weight: 700;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
+      padding: 0;
+    }
+
+    /* ── LEFT COLUMN ── */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── RIGHT COLUMN ── */
+    .quick-thought {
+      display: flex;
+      flex-direction: column;
+      align-self: stretch;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #500000;
+      margin: 0 0 12px 0;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input[type="text"],
+    textarea {
+      font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+      font-size: 15px;
+      color: #333;
+      background: #fafafa;
+      border: 1.5px solid #e0d8d8;
+      border-radius: 10px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      width: 100%;
+      resize: none;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #500000;
+      background: white;
+    }
+
+    textarea {
+      flex: 1;
+      min-height: 80px;
+    }
+
+    .grow {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .submit-btn {
+      margin-top: 4px;
+      background: #500000;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      letter-spacing: 0.02em;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .submit-btn:hover { background: #6b0000; }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .status {
+      min-height: 20px;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-style: italic;
+    }
+    .status.success { color: #16a34a; }
+    .status.error   { color: #dc2626; }
+    .status.loading { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="hub-layout">
+
+    <!-- LEFT: Clock + Calendar -->
+    <div class="left-col">
+
+      <div class="card clock-widget">
+        <div class="time" id="time">--:--</div>
+        <div class="date" id="date">Loading...</div>
+      </div>
+
+      <div class="card">
+        <div class="cal-header">
+          <button class="nav-btn" id="prev">&#8249;</button>
+          <div class="cal-title" id="month-label"></div>
+          <button class="nav-btn" id="next">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Quick Thought -->
+    <div class="card quick-thought">
+      <div class="section-title">Add a Quick Note</div>
+
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="name-input" placeholder="Your name">
+      </div>
+
+      <div class="form-group grow">
+        <label>Note</label>
+        <textarea id="note-input" placeholder="Type something..."></textarea>
+      </div>
+
+      <button class="submit-btn" id="submit-btn">Submit</button>
+      <div class="status" id="status"></div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ── Clock ── */
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("time").textContent =
+        now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
+      document.getElementById("date").textContent =
+        now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* ── Calendar ── */
+    const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    let current = new Date();
+    let viewing = new Date(current.getFullYear(), current.getMonth(), 1);
+
+    function renderCalendar() {
+      const grid = document.getElementById('cal-grid');
+      const label = document.getElementById('month-label');
+      label.textContent = viewing.toLocaleDateString([], { month: 'long', year: 'numeric' });
+      grid.innerHTML = '';
+
+      DAY_LABELS.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'day-label';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      const firstDay = new Date(viewing.getFullYear(), viewing.getMonth(), 1).getDay();
+      const daysInMonth = new Date(viewing.getFullYear(), viewing.getMonth() + 1, 0).getDate();
+      const daysInPrev = new Date(viewing.getFullYear(), viewing.getMonth(), 0).getDate();
+
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const el = document.createElement('div');
+        el.className = 'cal-day other-month';
+        el.textContent = daysInPrev - i;
+        grid.appendChild(el);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const el = document.createElement('div');
+        const isToday = d === current.getDate()
+          && viewing.getMonth() === current.getMonth()
+          && viewing.getFullYear() === current.getFullYear();
+        el.className = isToday ? 'cal-day today' : 'cal-day';
+        el.textContent = d;
+        grid.appendChild(el);
+      }
+
+      const totalCells = grid.children.length - 7;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let d = 1; d <= remaining; d++) {
+        const el = document.createElement('div');
+        el.className = 'cal-day other-month';
+        el.textContent = d;
+        grid.appendChild(el);
+      }
+    }
+
+    document.getElementById('prev').addEventListener('click', () => {
+      viewing = new Date(viewing.getFullYear(), viewing.getMonth() - 1, 1);
+      renderCalendar();
+    });
+    document.getElementById('next').addEventListener('click', () => {
+      viewing = new Date(viewing.getFullYear(), viewing.getMonth() + 1, 1);
+      renderCalendar();
+    });
+
+    renderCalendar();
+
+    /* ── Submit ── */
+    const WORKER_URL = "https://script.google.com/macros/s/AKfycby2uMhFu9J34EEhrRLJ2kRjBc89BGWQ2Iq6sy704OShtWM82ZdgcuciOB5zBkoPlrA/exec";
+
+    async function submitNote() {
+      const name   = document.getElementById('name-input').value.trim();
+      const text   = document.getElementById('note-input').value.trim();
+      const status = document.getElementById('status');
+      const btn    = document.getElementById('submit-btn');
+
+      if (!name || !text) {
+        status.textContent = "Please fill in both fields.";
+        status.className = "status error";
+        return;
+      }
+
+      const timestamp = new Date().toLocaleString("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+
+      btn.disabled = true;
+      status.textContent = "Saving...";
+      status.className = "status loading";
+
+      try {
+        await fetch(WORKER_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ name, text, timestamp }),
+        });
+
+        document.getElementById('name-input').value = '';
+        document.getElementById('note-input').value = '';
+        status.textContent = "✓ Note saved!";
+        status.className = "status success";
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+        status.className = "status error";
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => { status.textContent = ""; status.className = "status"; }, 4000);
+      }
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', submitNote);
+
+    document.getElementById('note-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitNote();
+    });
+  </script>
+</body>
+</html>
