@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERC Events Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary:    #500000;
+      --color-bg:         #ffffff;
+      --color-nav-bg:     #f9f9f9;
+      --color-heading:    #500000;
+      --color-subheading: #3e3e3e;
+      --color-body:       #1c1c1c;
+      --color-divider:    rgba(0,0,0,0.15);
+      --font-primary:     'Work Sans', Arial, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--color-nav-bg);
+      font-family: var(--font-primary);
+      font-size: 16px;
+      line-height: 1.4;
+      color: var(--color-body);
+    }
+
+    body { padding: 20px 16px 40px; }
+
+    /* ── Page header ── */
+    .page-header {
+      background: #500000;
+      border-radius: 14px;
+      padding: 20px 24px 18px;
+      margin-bottom: 20px;
+      color: white;
+    }
+
+    .page-header h1 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      font-weight: 700;
+      font-family: var(--font-primary);
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Assignee filter pills ── */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-size: 15px;
+      color: var(--color-subheading);
+      margin-right: 4px;
+      font-weight: 500;
+    }
+
+    .pill {
+      font-family: var(--font-primary);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border-radius: 99px;
+      border: 1.5px solid #d0d0d0;
+      background: white;
+      color: #444;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pill:hover { border-color: #500000; color: #500000; }
+
+    .pill.active {
+      background: #500000;
+      border-color: #500000;
+      color: white;
+    }
+
+    /* ── Event cards ── */
+    .event-card {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .event-header {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .event-header:hover { background: #fdf9f9; }
+
+    .event-title-row {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .event-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-heading);
+      margin-bottom: 3px;
+    }
+
+    .event-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .event-date-chip {
+      font-size: 13px;
+      color: var(--color-subheading);
+    }
+
+    .days-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    .days-chip.future    { background: #f0f5ff; color: #2255aa; }
+    .days-chip.soon      { background: #fff8e0; color: #996600; }
+    .days-chip.very-soon { background: #fff0e0; color: #cc5500; }
+    .days-chip.past      { background: #f5f5f5; color: #999; }
+    .days-chip.today     { background: #e8f5e9; color: #2e7d32; }
+
+    .event-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .event-progress-label {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+
+    .event-progress-track {
+      width: 120px;
+      background: #f0f0f0;
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .event-progress-fill {
+      background: #500000;
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    .chevron {
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 2px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .event-card.collapsed .chevron { transform: rotate(-90deg); }
+
+    /* ── Task rows ── */
+    .task-list { padding: 4px 0; }
+    .event-card.collapsed .task-list { display: none; }
+
+    .task-row {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      align-items: start;
+      gap: 6px;
+      padding: 9px 18px;
+      border-bottom: 1px solid #f7f7f7;
+      transition: background 0.12s;
+    }
+
+    .task-row:last-child { border-bottom: none; }
+    .task-row:hover { background: #fdf9f9; }
+    .task-row.is-done { opacity: 0.4; }
+
+    .task-cb {
+      display: flex;
+      justify-content: center;
+      padding-top: 3px;
+    }
+
+    .task-cb input {
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      accent-color: #500000;
+    }
+
+    .task-cb input:disabled { cursor: default; }
+
+    .task-body { min-width: 0; }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .task-name {
+      font-size: 16px;
+      color: var(--color-body);
+      line-height: 1.3;
+    }
+
+    .is-done .task-name {
+      text-decoration: line-through;
+      color: #aaa;
+    }
+
+    .task-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 99px;
+      font-weight: 500;
+      display: inline-block;
+    }
+
+    .chip-due          { background: #fff8f0; color: #a05000; }
+    .chip-due.overdue  { background: #fff0f0; color: #c00; font-weight: 700; }
+
+    .task-assignee {
+      font-size: 12px;
+      color: #888;
+    }
+
+    /* Notes */
+    .notes-toggle {
+      flex-shrink: 0;
+      background: none; border: none; cursor: pointer;
+      font-family: var(--font-primary);
+      font-size: 12px; color: #aaa;
+      padding: 2px 0; white-space: nowrap;
+    }
+    .notes-toggle:hover { color: #500000; }
+
+    .notes-panel {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-left: 3px solid #e8d8d8;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .notes-text { margin-bottom: 8px; }
+
+    .notes-refs { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; border-top: 1px solid #eee; padding-top: 6px; }
+    .notes-refs-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #bbb; margin-bottom: 2px; }
+    .ref-item   { font-size: 12px; color: #888; }
+
+    /* Initials form */
+    .initials-form {
+      display: none;
+      grid-column: 2 / 4;
+      margin-top: 6px;
+      padding: 10px 12px;
+      background: #fdf9f9;
+      border: 1px solid #e8d8d8;
+      border-radius: 10px;
+      gap: 8px;
+      flex-direction: column;
+    }
+
+    .initials-form.open { display: flex; }
+
+    .initials-form label { font-size: 12px; color: #777; }
+
+    .initials-row { display: flex; gap: 8px; align-items: center; }
+
+    .initials-form input[type="text"] {
+      font-family: var(--font-primary);
+      font-size: 14px;
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 72px;
+      outline: none;
+      text-transform: uppercase;
+    }
+
+    .initials-form input:focus { border-color: #500000; }
+
+    .btn-submit {
+      font-family: var(--font-primary);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 14px;
+      background: #500000;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-submit:hover { background: #6a0000; }
+    .btn-submit:disabled { background: #ccc; cursor: default; }
+
+    .btn-cancel {
+      font-family: var(--font-primary);
+      font-size: 13px;
+      color: #aaa;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
+
+    .success-msg { font-size: 12px; color: #2a7a2a; font-style: italic; }
+
+    /* States */
+    .state-msg {
+      padding: 24px;
+      text-align: center;
+      color: #bbb;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .refresh-btn {
+      font-family: inherit;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      padding: 3px 10px;
+      cursor: pointer;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .refresh-btn:hover { background: rgba(255,255,255,0.25); color: white; }
+
+    .no-tasks { padding: 12px 18px; font-size: 13px; color: #bbb; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1>ERC Events Hub <button class="refresh-btn" onclick="loadTasks()">↻ Refresh</button></h1>
+  </div>
+
+  <!-- Person filter -->
+  <div class="filter-bar" id="filterBar">
+    <span class="filter-label">Person:</span>
+    <button class="pill active" data-assignee="" onclick="setAssignee(this)">Everyone</button>
+  </div>
+
+  <!-- Due date filter -->
+  <div class="filter-bar" id="dateFilterBar">
+    <span class="filter-label">Due:</span>
+    <button class="pill active" data-due="" onclick="setDueFilter(this)">All dates</button>
+    <button class="pill" data-due="overdue" onclick="setDueFilter(this)">Overdue</button>
+    <button class="pill" data-due="week" onclick="setDueFilter(this)">This week</button>
+    <button class="pill" data-due="month" onclick="setDueFilter(this)">This month</button>
+  </div>
+
+  <!-- Event cards -->
+  <div id="eventCards">
+    <div class="state-msg">Loading…</div>
+  </div>
+
+<script>
+  const CSV_URL    = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSyBQCdxl44OnGVVfOFbuaUidax14KpWjWYnCQmNV0G7MXbXof3tl4K5wNvs0tEity0AzlhZ_OfayXD/pub?output=csv';
+  const SUBMIT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← paste your deployed Apps Script URL
+
+  let allTasks = [];
+  let activeAssignee = '';
+  let activeDueFilter = '';
+
+  // ── CSV parser ───────────────────────────────────────────────────────────
+  function parseCSV(text) {
+    const rows = [];
+    const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const cols = []; let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ;
+        } else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else cur += c;
+      }
+      cols.push(cur.trim());
+      rows.push(cols);
+    }
+    return rows;
+  }
+
+  // ── Load ─────────────────────────────────────────────────────────────────
+  async function loadTasks() {
+    document.getElementById('eventCards').innerHTML = '<div class="state-msg">Loading…</div>';
+    try {
+      const res  = await fetch(CSV_URL + '&t=' + Date.now());
+      const text = await res.text();
+      const rows = parseCSV(text);
+      if (rows.length < 2) { document.getElementById('eventCards').innerHTML = '<div class="state-msg">No tasks found.</div>'; return; }
+
+      const headers = rows[0].map(h => h.toLowerCase().trim());
+      const idx = {
+        done:      headers.indexOf('done'),
+        event:     headers.indexOf('event'),
+        task:      headers.indexOf('task'),
+        category:  headers.indexOf('category'),
+        assigned:  headers.indexOf('assigned to'),
+        dueDate:   headers.indexOf('due date'),
+        status:    headers.indexOf('status'),
+        notes:     headers.indexOf('notes'),
+        reference: headers.indexOf('reference / how-to'),
+      };
+
+      allTasks = rows.slice(1)
+        .filter(r => r.some(c => c))
+        .map((r, i) => ({
+          id:        i,
+          done:      (r[idx.done] || '').toUpperCase() === 'TRUE',
+          event:     r[idx.event]     || '',
+          task:      r[idx.task]      || '',
+          category:  r[idx.category]  || '',
+          assigned:  r[idx.assigned]  || '',
+          dueDate:   r[idx.dueDate]   || '',
+          status:    r[idx.status]    || '',
+          notes:     r[idx.notes]     || '',
+          reference: r[idx.reference] || '',
+          localDone: false,
+        }));
+
+      buildAssigneePills();
+      render();
+    } catch(e) {
+      document.getElementById('eventCards').innerHTML = '<div class="state-msg">Could not load. Make sure the sheet is published.</div>';
+    }
+  }
+
+  // ── Assignee pills ───────────────────────────────────────────────────────
+  function buildAssigneePills() {
+    const bar = document.getElementById('filterBar');
+    // remove old pills except first
+    while (bar.children.length > 2) bar.removeChild(bar.lastChild);
+    const names = [...new Set(allTasks.map(t => t.assigned).filter(Boolean))].sort();
+    names.forEach(name => {
+      const btn = document.createElement('button');
+      btn.className = 'pill';
+      btn.dataset.assignee = name;
+      btn.textContent = name;
+      btn.onclick = function() { setAssignee(this); };
+      bar.appendChild(btn);
+    });
+  }
+
+  function setAssignee(btn) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    activeAssignee = btn.dataset.assignee;
+    render();
+  }
+
+  // ── Due date filter ───────────────────────────────────────────────────────
+  function setDueFilter(btn) {
+    document.querySelectorAll('#dateFilterBar .pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    activeDueFilter = btn.dataset.due;
+    render();
+  }
+
+  function matchesDueFilter(task) {
+    if (!activeDueFilter) return true;
+    const d = task.dueDate ? new Date(task.dueDate) : null;
+    if (!d || isNaN(d)) return false;
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (activeDueFilter === 'overdue') return d < today;
+    if (activeDueFilter === 'week') {
+      const end = new Date(today); end.setDate(end.getDate() + 7);
+      return d >= today && d <= end;
+    }
+    if (activeDueFilter === 'month') {
+      const end = new Date(today); end.setDate(end.getDate() + 30);
+      return d >= today && d <= end;
+    }
+    return true;
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  function render() {
+    const visible = allTasks
+      .filter(t => !activeAssignee || t.assigned === activeAssignee)
+      .filter(t => matchesDueFilter(t));
+
+    // Group by event (preserve order of first appearance)
+    const eventOrder = [];
+    const byEvent = {};
+    visible.forEach(t => {
+      if (!byEvent[t.event]) { byEvent[t.event] = []; eventOrder.push(t.event); }
+      byEvent[t.event].push(t);
+    });
+
+    // Sort events: upcoming first, past last
+    eventOrder.sort((a, b) => {
+      const da = getEventDate(byEvent[a]);
+      const db = getEventDate(byEvent[b]);
+      if (!da && !db) return a.localeCompare(b);
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    const container = document.getElementById('eventCards');
+    container.innerHTML = '';
+
+    if (eventOrder.length === 0) {
+      container.innerHTML = '<div class="state-msg">No tasks to show.</div>';
+      return;
+    }
+
+    eventOrder.forEach(eventName => {
+      const tasks    = byEvent[eventName];
+      const evDone   = tasks.filter(t => t.done || t.localDone).length;
+      const evTotal  = tasks.length;
+      const evPct    = evTotal ? Math.round(evDone / evTotal * 100) : 0;
+      const evDate   = getEventDate(tasks);
+      const pending  = tasks.filter(t => !t.done && !t.localDone);
+
+      const card = document.createElement('div');
+      card.className = 'event-card';
+
+      // Event header
+      const header = document.createElement('div');
+      header.className = 'event-header';
+      header.innerHTML = `
+        <div class="event-title-row">
+          <div class="event-name">${eventName || '(No Event)'}</div>
+          <div class="event-meta">
+            ${evDate ? `<span class="event-date-chip">${formatDate(evDate)}</span>` : ''}
+            ${evDate ? `<span class="days-chip ${daysClass(evDate)}">${daysLabel(evDate)}</span>` : ''}
+          </div>
+        </div>
+        <div class="event-right">
+          <div class="event-progress-label">${evDone}/${evTotal} done</div>
+          <div class="event-progress-track">
+            <div class="event-progress-fill" style="width:${evPct}%"></div>
+          </div>
+        </div>
+        <span class="chevron">▼</span>
+      `;
+      header.addEventListener('click', () => card.classList.toggle('collapsed'));
+
+      // Task list
+      const list = document.createElement('div');
+      list.className = 'task-list';
+
+      if (tasks.length === 0) {
+        list.innerHTML = '<div class="no-tasks">No tasks.</div>';
+      } else {
+        tasks.forEach(t => {
+          const isDone   = t.done || t.localDone;
+          const overdue  = isOverdue(t.dueDate) && !isDone;
+
+          const row = document.createElement('div');
+          row.className = 'task-row' + (isDone ? ' is-done' : '');
+          row.dataset.id = t.id;
+
+          const cbWrap = document.createElement('div');
+          cbWrap.className = 'task-cb';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox'; cb.checked = isDone; cb.disabled = isDone;
+          cb.addEventListener('change', () => openInitials(t.id, row));
+          cbWrap.appendChild(cb);
+
+          const body = document.createElement('div');
+          body.className = 'task-body';
+
+          const hasNotes = t.notes || t.reference;
+
+          body.innerHTML = `
+            <div class="task-header">
+              <div class="task-name">${t.task}</div>
+              ${hasNotes ? `<button class="notes-toggle" id="toggle-${t.id}" onclick="toggleNotes(${t.id})">▶ Details</button>` : ''}
+            </div>
+            <div class="task-meta">
+              ${t.dueDate  ? `<span class="chip chip-due${overdue ? ' overdue' : ''}">${overdue ? '⚠ Overdue · ' : 'Due '}${formatDate(t.dueDate)}</span>` : ''}
+              ${t.assigned ? `<span class="task-assignee">👤 ${t.assigned}</span>` : ''}
+            </div>
+            ${hasNotes ? `
+            <div class="notes-panel" id="notes-${t.id}" style="display:none">
+              ${t.notes ? `<p class="notes-text">${t.notes}</p>` : ''}
+              ${t.reference ? `<div class="notes-refs"><div class="notes-refs-label">How-To / References</div>${formatRefs(t.reference)}</div>` : ''}
+            </div>` : ''}
+          `;
+
+          // Initials form
+          const form = document.createElement('div');
+          form.className = 'initials-form';
+          form.id = 'form-' + t.id;
+          form.innerHTML = `
+            <label>Enter your initials to confirm:</label>
+            <div class="initials-row">
+              <input type="text" maxlength="5" placeholder="e.g. KB" id="initials-${t.id}" />
+              <button class="btn-submit" onclick="submitTask(${t.id})">Submit</button>
+              <button class="btn-cancel" onclick="cancelTask(${t.id})">Cancel</button>
+            </div>
+            <span class="success-msg" id="success-${t.id}" style="display:none">✓ Logged!</span>
+          `;
+          body.appendChild(form);
+
+          row.appendChild(cbWrap);
+          row.appendChild(body);
+          list.appendChild(row);
+        });
+      }
+
+      // Auto-collapse if all done
+      if (evDone === evTotal && evTotal > 0) card.classList.add('collapsed');
+
+      card.appendChild(header);
+      card.appendChild(list);
+      container.appendChild(card);
+    });
+  }
+
+  // ── Initials / submit ────────────────────────────────────────────────────
+  function openInitials(id, row) {
+    const form = document.getElementById('form-' + id);
+    form.classList.add('open');
+    setTimeout(() => document.getElementById('initials-' + id)?.focus(), 50);
+  }
+
+  function cancelTask(id) {
+    document.getElementById('form-' + id)?.classList.remove('open');
+    const row = document.querySelector(`.task-row[data-id="${id}"]`);
+    const cb  = row?.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = false;
+  }
+
+  async function submitTask(id) {
+    const task = allTasks.find(t => t.id === id);
+    if (!task) return;
+    const initials = (document.getElementById('initials-' + id)?.value || '').trim().toUpperCase();
+    if (!initials) { alert('Please enter your initials.'); return; }
+
+    const btn = document.querySelector(`#form-${id} .btn-submit`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+
+    try {
+      const url = SUBMIT_URL
+        + '?action=complete'
+        + '&initials=' + encodeURIComponent(initials)
+        + '&task='     + encodeURIComponent(task.task)
+        + '&event='    + encodeURIComponent(task.event);
+      await fetch(url, { mode: 'no-cors' });
+    } catch(_) {}
+
+    task.localDone = true;
+    const s = document.getElementById('success-' + id);
+    if (s) s.style.display = 'inline';
+    if (btn) btn.textContent = '✓ Done';
+    setTimeout(() => render(), 1000);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function getEventDate(tasks) {
+    // Use earliest due date as a proxy for event urgency
+    const dates = tasks.map(t => t.dueDate ? new Date(t.dueDate) : null).filter(d => d && !isNaN(d));
+    if (!dates.length) return null;
+    return dates.reduce((a, b) => a < b ? a : b);
+  }
+
+  function daysUntil(date) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d     = new Date(date); d.setHours(0,0,0,0);
+    return Math.round((d - today) / 86400000);
+  }
+
+  function daysLabel(date) {
+    const n = daysUntil(date);
+    if (n === 0) return 'Today!';
+    if (n === 1) return 'Tomorrow';
+    if (n < 0)   return `${Math.abs(n)}d ago`;
+    return `in ${n} days`;
+  }
+
+  function daysClass(date) {
+    const n = daysUntil(date);
+    if (n === 0)  return 'today';
+    if (n < 0)    return 'past';
+    if (n <= 7)   return 'very-soon';
+    if (n <= 30)  return 'soon';
+    return 'future';
+  }
+
+  function isOverdue(ds) {
+    if (!ds) return false;
+    const d = new Date(ds); return !isNaN(d) && d < new Date();
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const dt = d instanceof Date ? d : new Date(d);
+    if (isNaN(dt)) return String(d);
+    return dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  // ── Notes toggle ──────────────────────────────────────────────
+  function toggleNotes(id) {
+    const panel  = document.getElementById('notes-' + id);
+    const toggle = document.getElementById('toggle-' + id);
+    if (!panel) return;
+    const open = panel.style.display === 'none';
+    panel.style.display  = open ? 'block' : 'none';
+    toggle.textContent   = open ? '▼ Hide details' : '▶ Show details';
+  }
+
+  function formatRefs(refStr) {
+    return refStr.split('|').map(r => r.trim()).filter(Boolean)
+      .map(r => `<span class="ref-item">→ ${r}</span>`).join('');
+  }
+
+  loadTasks();
+</script>
+</body>
+</html>
