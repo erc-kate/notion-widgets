@@ -9,7 +9,7 @@ const LOG_SHEET_NAME   = 'Completion Log';
 
 // ── Entry point ───────────────────────────────────────────────
 function doGet(e) {
-  const action = e.parameter.action;
+  const action = (e && e.parameter) ? e.parameter.action : null;
 
   try {
     if (action === 'complete') {
